@@ -24,7 +24,7 @@ public class ClientExportHelper implements ClientModInitializer {
 
     @Environment(EnvType.CLIENT)
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
-        dispatcher.register(ClientCommandManager.literal("clientexport")
+        var command = dispatcher.register(ClientCommandManager.literal("clientexport")
                 .executes(context -> {
                     context.getSource().sendFeedback(Component.literal("Client Export Helper " + version + " running!"));
                     return 0;
@@ -48,5 +48,6 @@ public class ClientExportHelper implements ClientModInitializer {
                     return 1;
                 }))
         );
+        dispatcher.register(ClientCommandManager.literal("clex").redirect(command));
     }
 }

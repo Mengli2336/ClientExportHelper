@@ -8,8 +8,8 @@
 		"QWERTY770"
 	],
 	"contact": {
-		"homepage": "https://github.com/QWERTY770",
-		"sources": "https://github.com/QWERTY770"
+		"homepage": "https://github.com/QWERTY770/",
+		"sources": "https://github.com/QWERTY770/ClientExportHelper"
 	},
 	"license": "MIT License",
 	"environment": "*",
@@ -22,9 +22,9 @@
 		"clientexport.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.15.0",
-		"minecraft": ">=1.20.2",
-		"java": ">=17",
+		"fabricloader": ">=0.16.0",
+		"minecraft": ">=1.20.6",
+		"java": ">=21",
 		"fabric-api": "*"
 	},
 	"suggests": {

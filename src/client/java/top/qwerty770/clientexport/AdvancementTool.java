@@ -14,6 +14,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import top.qwerty770.clientexport.mixin.ClientAdvancementsAccessor;
 
 import java.util.HashMap;
@@ -44,13 +45,16 @@ public class AdvancementTool {
         }
         if (advancement.display().isPresent()) {
             ItemStack icon = advancement.display().get().getIcon();
-            if (icon.getComponents().has(DataComponents.ENCHANTMENTS)) {
+            if (icon.has(DataComponents.ENCHANTMENTS)) {
                 // Enchantments are only registered on server side
-                enchantments = new HashMap<>();
-                for (Object2IntMap.Entry<Holder<Enchantment>> entry : Objects.requireNonNull(icon.get(DataComponents.ENCHANTMENTS)).entrySet()){
-                    enchantments.put(entry.getKey().getRegisteredName(), entry.getIntValue());
+                ItemEnchantments enchantmentsComponent = Objects.requireNonNull(icon.get(DataComponents.ENCHANTMENTS));
+                if (!enchantmentsComponent.isEmpty()) {
+                    enchantments = new HashMap<>();
+                    for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantmentsComponent.entrySet()) {
+                        enchantments.put(entry.getKey().getRegisteredName(), entry.getIntValue());
+                    }
+                    icon.remove(DataComponents.ENCHANTMENTS);
                 }
-                icon.remove(DataComponents.ENCHANTMENTS);
             }
             builder.display(advancement.display().get());
         }
@@ -68,10 +72,10 @@ public class AdvancementTool {
         }
         try {
             JsonObject jsonObject = (JsonObject) Advancement.CODEC.encodeStart(JsonOps.INSTANCE, builder.build(holder.id()).value()).getOrThrow();
-            if (enchantments != null){
+            if (enchantments != null) {
                 JsonObject object = new JsonObject();
                 enchantments.forEach(object::addProperty);
-                jsonObject.add("icon_enchantments", object);
+                jsonObject.add("clientexport:icon_enchantments", object);
             }
             return jsonObject;
         } catch (Exception e) {
@@ -91,7 +95,7 @@ public class AdvancementTool {
             JsonArray remaining = new JsonArray();
             progress.getRemainingCriteria().forEach(remaining::add);
             result.add("remaining", remaining);
-            result.addProperty("done_percent", progress.getPercent());
+            result.addProperty("progress", progress.getPercent());
             return result;
         } catch (IllegalStateException | IllegalArgumentException e) {
             return error(e, "Failed to encode the progress of the advancement {}!", progress.toString());
