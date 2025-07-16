@@ -10,6 +10,8 @@ import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientAdvancements;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponentHolder;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -17,10 +19,13 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import top.qwerty770.clientexport.mixin.ClientAdvancementsAccessor;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
+import static top.qwerty770.clientexport.util.MappingResolverTool.mapIntermediaryMethodNames;
 
 public class AdvancementTool {
     public static AdvancementTree getAdvancementTree() {
@@ -45,9 +50,19 @@ public class AdvancementTool {
         }
         if (advancement.display().isPresent()) {
             ItemStack icon = advancement.display().get().getIcon();
+            // Enchantments are only registered on server side
             if (icon.has(DataComponents.ENCHANTMENTS)) {
-                // Enchantments are only registered on server side
-                ItemEnchantments enchantmentsComponent = Objects.requireNonNull(icon.get(DataComponents.ENCHANTMENTS));
+                ItemEnchantments enchantmentsComponent = ItemEnchantments.EMPTY;
+                MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+                String name = mapIntermediaryMethodNames("net.minecraft.class_9322", "(Lnet/minecraft/class_9331;)Ljava/lang/Object;",
+                        "method_57824", "get");
+                try {
+                    var method = lookup.findVirtual(DataComponentHolder.class, name, MethodType.methodType(Object.class, DataComponentType.class));
+                    enchantmentsComponent = (ItemEnchantments) method.invoke((DataComponentHolder) icon, DataComponents.ENCHANTMENTS);
+                } catch (Throwable e) {
+                    ClientExportHelper.LOGGER.error("Failed to get enchantments from ItemStack", e);
+                    icon.remove(DataComponents.ENCHANTMENTS);
+                }
                 if (!enchantmentsComponent.isEmpty()) {
                     enchantments = new HashMap<>();
                     for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantmentsComponent.entrySet()) {

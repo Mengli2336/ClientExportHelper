@@ -1,7 +1,6 @@
 package top.qwerty770.clientexport.util;
 
 import com.google.gson.JsonObject;
-import com.google.gson.Strictness;
 import com.google.gson.internal.Streams;
 import com.google.gson.stream.JsonWriter;
 import com.mojang.brigadier.context.CommandContext;
@@ -37,7 +36,6 @@ public class FileUtil {
 
     public static void writeJson(FileWriter fileWriter, JsonObject jsonObject) throws IOException {
         JsonWriter jsonWriter = new JsonWriter(fileWriter);
-        jsonWriter.setStrictness(Strictness.LENIENT);
         jsonWriter.setIndent("  ");
         Streams.write(jsonObject, jsonWriter);
     }

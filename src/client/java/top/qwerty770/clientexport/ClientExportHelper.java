@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("unused")
 public class ClientExportHelper implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("clientexport");
-    public static final String version = "3.0.0";
+    public static final String version = "3.1.0";
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess) -> register(dispatcher)));
