@@ -6,26 +6,22 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.advancements.*;
-import net.minecraft.advancements.critereon.ImpossibleTrigger;
+import net.minecraft.advancements.criterion.ImpossibleTrigger;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientAdvancements;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponentHolder;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import top.qwerty770.clientexport.mixin.ClientAdvancementsAccessor;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static top.qwerty770.clientexport.util.MappingResolverTool.mapIntermediaryMethodNames;
+import java.util.Optional;
 
 public class AdvancementTool {
     public static AdvancementTree getAdvancementTree() {
@@ -49,29 +45,25 @@ public class AdvancementTool {
             builder = Advancement.Builder.recipeAdvancement();
         }
         if (advancement.display().isPresent()) {
-            ItemStack icon = advancement.display().get().getIcon();
-            // Enchantments are only registered on server side
-            if (icon.has(DataComponents.ENCHANTMENTS)) {
-                ItemEnchantments enchantmentsComponent = ItemEnchantments.EMPTY;
-                MethodHandles.Lookup lookup = MethodHandles.publicLookup();
-                String name = mapIntermediaryMethodNames("net.minecraft.class_9322", "(Lnet/minecraft/class_9331;)Ljava/lang/Object;",
-                        "method_57824", "get");
-                try {
-                    var method = lookup.findVirtual(DataComponentHolder.class, name, MethodType.methodType(Object.class, DataComponentType.class));
-                    enchantmentsComponent = (ItemEnchantments) method.invoke((DataComponentHolder) icon, DataComponents.ENCHANTMENTS);
-                } catch (Throwable e) {
-                    ClientExportHelper.LOGGER.error("Failed to get enchantments from ItemStack", e);
-                    icon.remove(DataComponents.ENCHANTMENTS);
-                }
+            DisplayInfo display = advancement.display().get();
+            // Enchantments are only registered on the server side, so they cannot be encoded from the client.
+            // ItemStackTemplate has no "has" method and ENCHANTMENTS has a default value, so check the
+            // raw component patch instead of the resolved value, otherwise every icon would be rewritten.
+            if (hasEnchantments(display.getIcon())) {
+                ItemEnchantments enchantmentsComponent = display.getIcon().get(DataComponents.ENCHANTMENTS);
                 if (!enchantmentsComponent.isEmpty()) {
                     enchantments = new HashMap<>();
                     for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantmentsComponent.entrySet()) {
                         enchantments.put(entry.getKey().getRegisteredName(), entry.getIntValue());
                     }
-                    icon.remove(DataComponents.ENCHANTMENTS);
                 }
+                ItemStack icon = display.getIcon().create();
+                icon.remove(DataComponents.ENCHANTMENTS);
+                display = new DisplayInfo(ItemStackTemplate.fromNonEmptyStack(icon), display.getTitle(),
+                        display.getDescription(), display.getBackground(), display.getType(),
+                        display.shouldShowToast(), display.shouldAnnounceChat(), display.isHidden());
             }
-            builder.display(advancement.display().get());
+            builder.display(display);
         }
         builder.rewards(advancement.rewards());
         builder.requirements(advancement.requirements());
@@ -81,10 +73,10 @@ public class AdvancementTool {
                 builder.addCriterion(string, CriteriaTriggers.IMPOSSIBLE.createCriterion(new ImpossibleTrigger.TriggerInstance()));
             }
         }
-        if (advancement.parent().isPresent()) {
-            AdvancementNode node = tree.get(advancement.parent().orElseGet(() -> ResourceLocation.parse("")));
+        advancement.parent().ifPresent(parent -> {
+            AdvancementNode node = tree.get(parent);
             if (node != null) builder.parent(node.holder());
-        }
+        });
         try {
             JsonObject jsonObject = (JsonObject) Advancement.CODEC.encodeStart(JsonOps.INSTANCE, builder.build(holder.id()).value()).getOrThrow();
             if (enchantments != null) {
@@ -96,6 +88,15 @@ public class AdvancementTool {
         } catch (Exception e) {
             return error(e, "Failed to encode the advancement {} due to an unexpected error!", holder.id().toString());
         }
+    }
+
+    private static boolean hasEnchantments(ItemStackTemplate template) {
+        for (Map.Entry<DataComponentType<?>, Optional<?>> entry : template.components().entrySet()) {
+            if (entry.getKey() == DataComponents.ENCHANTMENTS) {
+                return entry.getValue().isPresent();
+            }
+        }
+        return false;
     }
 
     public static Map<AdvancementHolder, AdvancementProgress> getProgress() {

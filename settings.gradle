@@ -1,18 +1,13 @@
 pluginManagement {
-    repositories {
-        maven {
-            name = 'Aliyun Mirror'
-            url  = 'https://maven.aliyun.com/repository/public'
-        }
-        maven {
-            name = 'Aliyun Gradle Plugins'
-            url = 'https://maven.aliyun.com/repository/gradle-plugin'
-        }
-        maven {
-            name = 'Fabric'
-            url = 'https://maven.fabricmc.net/'
-        }
-        mavenCentral()
-        gradlePluginPortal()
-    }
+	repositories {
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		maven { url = 'https://maven.aliyun.com/repository/public' }
+		mavenCentral()
+		gradlePluginPortal()
+	}
 }
+
+rootProject.name = 'client-export-helper'

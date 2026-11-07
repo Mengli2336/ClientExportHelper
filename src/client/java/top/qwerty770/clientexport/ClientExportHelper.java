@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
@@ -24,30 +24,30 @@ public class ClientExportHelper implements ClientModInitializer {
 
     @Environment(EnvType.CLIENT)
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
-        var command = dispatcher.register(ClientCommandManager.literal("clientexport")
+        var command = dispatcher.register(ClientCommands.literal("clientexport")
                 .executes(context -> {
                     context.getSource().sendFeedback(Component.literal("Client Export Helper " + version + " running!"));
                     return 0;
                 })
-                .then(ClientCommandManager.literal("advancements").executes(context -> {
+                .then(ClientCommands.literal("advancements").executes(context -> {
                     AdvancementCommand.exportAllAdvancements(context);
                     return 1;
-                }).then(ClientCommandManager.argument("namespace", StringArgumentType.string()).executes(context -> {
+                }).then(ClientCommands.argument("namespace", StringArgumentType.string()).executes(context -> {
                     AdvancementCommand.exportAdvancements(context.getArgument("namespace", String.class), context);
                     return 1;
                 })))
-                .then(ClientCommandManager.literal("progress").executes(context -> {
+                .then(ClientCommands.literal("progress").executes(context -> {
                     AdvancementCommand.exportAllProgress(context);
                     return 1;
-                }).then(ClientCommandManager.argument("namespace", StringArgumentType.string()).executes(context -> {
+                }).then(ClientCommands.argument("namespace", StringArgumentType.string()).executes(context -> {
                     AdvancementCommand.exportProgress(context.getArgument("namespace", String.class), context);
                     return 1;
                 })))
-                .then(ClientCommandManager.literal("statistics").executes(context -> {
+                .then(ClientCommands.literal("statistics").executes(context -> {
                     StatisticsCommand.exportStatistics(context);
                     return 1;
                 }))
         );
-        dispatcher.register(ClientCommandManager.literal("clex").redirect(command));
+        dispatcher.register(ClientCommands.literal("clex").redirect(command));
     }
 }
