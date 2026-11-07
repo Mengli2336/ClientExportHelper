@@ -42,7 +42,7 @@
 | `/clientexport progress <namespace>` | 只导出指定命名空间，例如 `/clientexport progress isletopia_advancements` |
 | `/clientexport statistics` | 导出统计数据 |
 
-`namespace` 是必填的字符串参数，填进度 ID 中冒号前的部分（如 `minecraft`），没有 Tab 补全。
+`namespace` 是字符串参数（`StringArgumentType.string()`），填进度 ID 中冒号前的部分，例如 `minecraft`、`isletopia_advancements`；不带参数就导出全部命名空间。参数没有 Tab 补全，也可以加引号写成 `"minecraft"`。
 
 执行成功会在聊天栏回显数量，例如：
 
@@ -70,7 +70,7 @@ export/isletopia_advancements-advancements-2026-11-07-201514.json
 export/statistics-2026-11-07-201614.json
 ```
 
-每次执行都会生成新文件，不会覆盖旧文件。
+每次执行都会生成新文件（时间戳精确到秒，同一秒内重复执行会写入同一个文件），不会覆盖旧文件。
 
 ### 进度定义（advancements）
 
@@ -193,6 +193,7 @@ mod 导出的是**已同步到客户端**的数据。没进过服务器时进度
 - 只导出客户端拿得到的数据；criterion 的真实触发条件无法获取，故用 `minecraft:impossible` 占位。
 - 进度完成时间依赖客户端本地时区，跨时区对比时需要注意。
 - 统计数据的完整性取决于是否打开过统计界面，以及服务端是否允许同步。
+- 带 `namespace` 参数导出时，聊天栏回显的数量是客户端已同步的总条数，不是该命名空间的条数（导出文件里只有该命名空间）。
 
 ## 许可证
 
